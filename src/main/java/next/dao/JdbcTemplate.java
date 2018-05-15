@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -16,7 +17,7 @@ import java.util.List;
  * Github : http://github.com/WonYoungPark
  */
 public class JdbcTemplate {
-    public List query(String query, PreparedStatementSetter preparedStatementSetter, RowMapper rowMapper) throws SQLException {
+    public <T> List<T> query(String query, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) throws SQLException {
         ResultSet rs = null;
         try(Connection con = ConnectionManager.getConnection();
             PreparedStatement pstmt = con.prepareStatement(query);
@@ -25,7 +26,7 @@ public class JdbcTemplate {
 
             rs = pstmt.executeQuery();
 
-            List list = new ArrayList<>();
+            List<T> list = new ArrayList<>();
             while (rs.next()) {
                 list.add(rowMapper.mapRow(rs));
             }
@@ -37,15 +38,13 @@ public class JdbcTemplate {
         }
     }
 
-    public Object queryForObject(String query, PreparedStatementSetter preparedStatementSetter, RowMapper rowMapper) throws SQLException {
+    public <T> T queryForObject(String query, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) throws SQLException {
         ResultSet rs = null;
         try(Connection con = ConnectionManager.getConnection();
-            PreparedStatement pstmt = con.prepareStatement(query)
-            ) {
+            PreparedStatement pstmt = con.prepareStatement(query);
+        ) {
             preparedStatementSetter.setParameters(pstmt);
-
             rs = pstmt.executeQuery();
-
             if (rs.next()) {
                 return rowMapper.mapRow(rs);
             }
@@ -56,10 +55,38 @@ public class JdbcTemplate {
         }
     }
 
+    public <T> T queryForObject(String query, RowMapper<T> rowMapper, Object... values) throws SQLException {
+
+        try(Connection con = ConnectionManager.getConnection();
+            PreparedStatement pstmt = con.prepareStatement(query);
+            ResultSet rs = pstmt.executeQuery();
+        ) {
+            for(int index = 0; index < values.length; index++) {
+                pstmt.setObject(index + 1, values[index]);
+            }
+
+            if (rs.next()) {
+                return rowMapper.mapRow(rs);
+            }
+            return null;
+        }
+    }
+
     void update(String query, PreparedStatementSetter preparedStatementSetter) throws SQLException {
         try(Connection con = ConnectionManager.getConnection();
             PreparedStatement pstmt = con.prepareStatement(query)) {
             preparedStatementSetter.setParameters(pstmt);
+            pstmt.execute();
+        }
+    }
+
+    void update(String query, Object... parameters) throws SQLException {
+        try(Connection con = ConnectionManager.getConnection();
+            PreparedStatement pstmt = con.prepareStatement(query)) {
+
+            for(int index = 0; index < parameters.length; index++) {
+                pstmt.setObject(index + 1, parameters[index]);
+            }
             pstmt.execute();
         }
     }
