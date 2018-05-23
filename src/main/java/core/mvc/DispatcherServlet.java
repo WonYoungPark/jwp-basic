@@ -22,12 +22,12 @@ public class DispatcherServlet extends HttpServlet {
     private static final Logger log = LoggerFactory.getLogger(DispatcherServlet.class);
     private static final String DEFAULT_REDIRECT_PREFIX = "redirect:";
 
-    private ReqeustMapping reqeustMapping;
+    private RequestMapping requestMapping;
 
     @Override
     public void init() throws ServletException {
-        reqeustMapping = new ReqeustMapping();
-        reqeustMapping.initMapping();
+        requestMapping = new RequestMapping();
+        requestMapping.initMapping();
     }
 
     @Override
@@ -36,11 +36,12 @@ public class DispatcherServlet extends HttpServlet {
         String requestUri = req.getRequestURI();
         log.debug("Method : {}, Request URI : {}", req.getMethod(), requestUri);
 
-        Controller controller = reqeustMapping.findController(requestUri);
+        Controller controller = requestMapping.findController(requestUri);
 
         try {
             String viewName = controller.execute(req, resp);
-            move(viewName, req, resp);
+            if (viewName != null)
+                move(viewName, req, resp);
         } catch (Throwable e) {
             log.error(e.getMessage());
             throw new ServletException(e.getMessage());

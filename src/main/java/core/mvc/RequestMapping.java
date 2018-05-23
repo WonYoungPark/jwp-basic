@@ -1,6 +1,7 @@
 package core.mvc;
 
 import next.controller.*;
+import next.controller.qna.AddAnswerController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,10 +13,9 @@ import java.util.Map;
  * Blog : http://WonYoungPark.github.io
  * Github : http://github.com/WonYoungPark
  */
-public class ReqeustMapping {
-    private static final Logger log = LoggerFactory.getLogger(ReqeustMapping.class);
-
-    private static Map<String, Controller> mappings = new HashMap<>();
+public class RequestMapping {
+    private static final Logger logger = LoggerFactory.getLogger(DispatcherServlet.class);
+    private Map<String, Controller> mappings = new HashMap<>();
 
     void initMapping() {
         mappings.put("/", new HomeController());
@@ -28,8 +28,11 @@ public class ReqeustMapping {
         mappings.put("/users/create", new CreateUserController());
         mappings.put("/users/updateForm", new UpdateFormUserController());
         mappings.put("/users/update", new UpdateUserController());
+        mappings.put("/qna/show", new ShowController());
+        mappings.put("/api/qna/addAnswer", new AddAnswerController());
+//        mappings.put("/api/qna/deleteAnswer", new DeleteAnswerController());
 
-        log.info("Initialized Request Mapping!");
+        logger.info("Initialized Request Mapping!");
     }
 
     public Controller findController(String url) {

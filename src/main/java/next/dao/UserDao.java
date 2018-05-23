@@ -2,81 +2,50 @@ package next.dao;
 
 import next.model.User;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
-    public void insert(User user) throws DataAccessException {
+    public void insert(User user) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate();
-
-        PreparedStatementSetter pss = ps -> {
-            ps.setString(1, user.getUserId());
-            ps.setString(2, user.getPassword());
-            ps.setString(3, user.getName());
-            ps.setString(4, user.getEmail());
-        };
-        try {
-            jdbcTemplate.update("INSERT INTO USERS VALUES (?, ?, ?, ?)", pss);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        String sql = "INSERT INTO USERS VALUES (?, ?, ?, ?)";
+        jdbcTemplate.update(sql, user.getUserId(), user.getPassword(), user.getName(), user.getEmail());
     }
 
-    public void update(User user) throws DataAccessException {
+    public User findByUserId(String userId) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate();
+        String sql = "SELECT userId, password, name, email FROM USERS WHERE userid=?";
 
-        PreparedStatementSetter pss = ps -> {
-            ps.setString(1, user.getPassword());
-            ps.setString(2, user.getName());
-            ps.setString(3, user.getEmail());
-            ps.setString(4, user.getUserId());
+        RowMapper<User> rm = new RowMapper<User>() {
+            @Override
+            public User mapRow(ResultSet rs) throws SQLException {
+                return new User(rs.getString("userId"), rs.getString("password"), rs.getString("name"),
+                    rs.getString("email"));
+            }
         };
 
-        try {
-            jdbcTemplate.update("UPDATE USERS SET password = ?, name = ?, email = ? WHERE userId = ?", pss);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return jdbcTemplate.queryForObject(sql, rm, userId);
     }
 
-    public List<User> findAll() throws DataAccessException {
+    public List<User> findAll() throws SQLException {
         JdbcTemplate jdbcTemplate = new JdbcTemplate();
-        PreparedStatementSetter pss = ps -> {
+        String sql = "SELECT userId, password, name, email FROM USERS";
+
+        RowMapper<User> rm = new RowMapper<User>() {
+            @Override
+            public User mapRow(ResultSet rs) throws SQLException {
+                return new User(rs.getString("userId"), rs.getString("password"), rs.getString("name"),
+                    rs.getString("email"));
+            }
         };
 
-        RowMapper<User> rowMapper = resultSet -> {
-            return new User(
-            resultSet.getString("userId"),
-            resultSet.getString("password"),
-            resultSet.getString("name"),
-            resultSet.getString("email"));
-        };
-
-        try {
-            return jdbcTemplate.query("SELECT userId, password, name, email FROM USERS", pss, rowMapper);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        return jdbcTemplate.query(sql, rm);
     }
 
-    public User findByUserId(String userId) throws DataAccessException {
+    public void update(User user) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate();
-
-        PreparedStatementSetter pss = ps -> {
-            ps.setString(1, userId);
-        };
-
-        RowMapper<User> rowMapper = resultSet -> {
-            return new User(
-                resultSet.getString("userId"),
-                resultSet.getString("password"),
-                resultSet.getString("name"),
-                resultSet.getString("email"));
-        };
-        try {
-            return jdbcTemplate.queryForObject("SELECT userId, password, name, email FROM USERS WHERE userid=?", pss, rowMapper);
-        } catch (SQLException e) {
-            throw new DataAccessException(e);
-        }
+        String sql = "UPDATE USERS set password = ?, name = ?, email = ? WHERE userId = ?";
+        jdbcTemplate.update(sql, user.getPassword(), user.getName(), user.getEmail(), user.getUserId());
     }
 }
