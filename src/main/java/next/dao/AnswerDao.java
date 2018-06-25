@@ -1,22 +1,27 @@
 package next.dao;
 
-import core.jdbc.ConnectionManager;
-import core.jdbc.KeyHolder;
-import next.model.Answer;
-import org.springframework.jdbc.core.PreparedStatementCreator;
-
-import java.sql.*;
-import java.util.ArrayList;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.List;
 
-/**
- * Created by wyparks2@gmail.com on 2018. 5. 23.
- * Blog : http://WonYoungPark.github.io
- * Github : http://github.com/WonYoungPark
- */
+import next.model.Answer;
+import core.jdbc.JdbcTemplate;
+import core.jdbc.KeyHolder;
+import core.jdbc.PreparedStatementCreator;
+import core.jdbc.RowMapper;
+
 public class AnswerDao {
+    private static AnswerDao answerDao;
+    private JdbcTemplate jdbcTemplate;
+
+    public AnswerDao(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
     public Answer insert(Answer answer) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate();
         String sql = "INSERT INTO ANSWERS (writer, contents, createdDate, questionId) VALUES (?, ?, ?, ?)";
         PreparedStatementCreator psc = new PreparedStatementCreator() {
             @Override
@@ -36,14 +41,13 @@ public class AnswerDao {
     }
 
     public Answer findById(long answerId) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate();
         String sql = "SELECT answerId, writer, contents, createdDate, questionId FROM ANSWERS WHERE answerId = ?";
 
         RowMapper<Answer> rm = new RowMapper<Answer>() {
             @Override
             public Answer mapRow(ResultSet rs) throws SQLException {
                 return new Answer(rs.getLong("answerId"), rs.getString("writer"), rs.getString("contents"),
-                    rs.getTimestamp("createdDate"), rs.getLong("questionId"));
+                        rs.getTimestamp("createdDate"), rs.getLong("questionId"));
             }
         };
 
@@ -51,15 +55,14 @@ public class AnswerDao {
     }
 
     public List<Answer> findAllByQuestionId(long questionId) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate();
         String sql = "SELECT answerId, writer, contents, createdDate FROM ANSWERS WHERE questionId = ? "
-            + "order by answerId desc";
+                + "order by answerId desc";
 
         RowMapper<Answer> rm = new RowMapper<Answer>() {
             @Override
             public Answer mapRow(ResultSet rs) throws SQLException {
                 return new Answer(rs.getLong("answerId"), rs.getString("writer"), rs.getString("contents"),
-                    rs.getTimestamp("createdDate"), questionId);
+                        rs.getTimestamp("createdDate"), questionId);
             }
         };
 
@@ -67,7 +70,6 @@ public class AnswerDao {
     }
 
     public void delete(Long answerId) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate();
         String sql = "DELETE FROM ANSWERS WHERE answerId = ?";
         jdbcTemplate.update(sql, answerId);
     }

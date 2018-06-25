@@ -44,7 +44,11 @@ public class User {
     }
 
     public boolean isSameUser(User user) {
-        return userId.equals(user.userId);
+        return isSameUser(user.getUserId());
+    }
+
+    public boolean isSameUser(String newUserId) {
+        return userId.equals(newUserId);
     }
 
     @Override
@@ -84,4 +88,8 @@ public class User {
         return true;
     }
 
+    @Override
+    public String toString() {
+        return "User [userId=" + userId + ", name=" + name + ", email=" + email + "]";
+    }
 }

@@ -1,4 +1,3 @@
-// $(".qna-comment").on("click", ".answerWrite input[type=submit]", addAnswer);
 $(".answerWrite input[type=submit]").click(addAnswer);
 
 function addAnswer(e) {
@@ -17,9 +16,15 @@ function addAnswer(e) {
 }
 
 function onSuccess(json, status){
-  var answerTemplate = $("#answerTemplate").html();
-  var template = answerTemplate.format(json.writer, new Date(json.createdDate), json.contents, json.answerId, json.answerId);
-  $(".qna-comment-slipp-articles").prepend(template);
+  var result = json.result;
+  if (result.status) {
+	  var answer = json.answer;
+	  var answerTemplate = $("#answerTemplate").html();
+	  var template = answerTemplate.format(answer.writer, new Date(answer.createdDate), answer.contents, answer.answerId, answer.answerId);
+	  $(".qna-comment-slipp-articles").prepend(template);	  
+  } else {
+	  alert(result.message);
+  }
 }
 
 function onError(xhr, status) {
@@ -33,6 +38,7 @@ function deleteAnswer(e) {
 
   var deleteBtn = $(this);
   var queryString = deleteBtn.closest("form").serialize();
+  console.log("qs : " + queryString);
 
   $.ajax({
     type: 'post',
@@ -43,7 +49,8 @@ function deleteAnswer(e) {
       alert("error");
     },
     success: function (json, status) {
-      if (json.status) {
+      var result = json.result;
+      if (result.status) {
         deleteBtn.closest('article').remove();
       }
     }
@@ -54,8 +61,8 @@ String.prototype.format = function() {
   var args = arguments;
   return this.replace(/{(\d+)}/g, function(match, number) {
     return typeof args[number] != 'undefined'
-      ? args[number]
-      : match
-      ;
+        ? args[number]
+        : match
+        ;
   });
 };

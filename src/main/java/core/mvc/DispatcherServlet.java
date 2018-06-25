@@ -1,61 +1,82 @@
 package core.mvc;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
+import java.util.List;
 
-import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
-/**
- * Created by wyparks2@gmail.com on 2018. 5. 2.
- * Blog : http://WonYoungPark.github.io
- * Github : http://github.com/WonYoungPark
- */
+import com.google.common.collect.Lists;
+import core.nmvc.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @WebServlet(name = "dispatcher", urlPatterns = "/", loadOnStartup = 1)
 public class DispatcherServlet extends HttpServlet {
-    private static final long serialVersionUID = 1L;
-    private static final Logger log = LoggerFactory.getLogger(DispatcherServlet.class);
-    private static final String DEFAULT_REDIRECT_PREFIX = "redirect:";
+    private List<HandlerAdapter> handlerAdapters = Lists.newArrayList();
 
-    private RequestMapping requestMapping;
+    private static final long serialVersionUID = 1L;
+    private static final Logger logger = LoggerFactory.getLogger(DispatcherServlet.class);
+
+    private List<HandlerMapping> mappings = Lists.newArrayList();
 
     @Override
     public void init() throws ServletException {
-        requestMapping = new RequestMapping();
-        requestMapping.initMapping();
+        LegacyHandlerMapping lhm = new LegacyHandlerMapping();
+        lhm.initMapping();
+
+        AnnotationHandlerMapping ahm = new AnnotationHandlerMapping("next.controller");
+        ahm.initialize();
+
+        mappings.add(lhm);
+        mappings.add(ahm);
+
+        handlerAdapters.add(new ControllerHandlerAdapter());
+        handlerAdapters.add(new HandlerExectionHandlerAdapter());
     }
 
     @Override
-    protected void service(HttpServletRequest req, HttpServletResponse resp)
-        throws ServletException, IOException {
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String requestUri = req.getRequestURI();
-        log.debug("Method : {}, Request URI : {}", req.getMethod(), requestUri);
+        logger.debug("Method : {}, Request URI : {}", req.getMethod(), requestUri);
 
-        Controller controller = requestMapping.findController(requestUri);
-
+        Object handler = this.getHandler(req);
+        if (handler == null) {
+            throw new IllegalArgumentException("존재하지 않은 URL입니다.");
+        }
         try {
-            String viewName = controller.execute(req, resp);
-            if (viewName != null)
-                move(viewName, req, resp);
+            ModelAndView mav = excute(handler, req, resp);
+            this.render(req, resp, mav);
         } catch (Throwable e) {
-            log.error(e.getMessage());
+            logger.error("Exception : {}", e);
             throw new ServletException(e.getMessage());
         }
     }
 
-    private void move(String viewName, HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        if (viewName.startsWith(DEFAULT_REDIRECT_PREFIX)) {
-            resp.sendRedirect(viewName.substring(DEFAULT_REDIRECT_PREFIX.length()));
+    private Object getHandler(HttpServletRequest request) {
+        for (HandlerMapping handlerMapping : mappings) {
+            Object handler = handlerMapping.getHandler(request);
 
-            return;
+            if (handler != null)
+                return handler;
+        }
+        return null;
+    }
+
+    private ModelAndView excute(Object handler, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        for (HandlerAdapter handlerAdapter : handlerAdapters) {
+            if (handlerAdapter.supports(handler))
+                return handlerAdapter.handle(request, response, handler);
         }
 
-        RequestDispatcher requestDispatcher = req.getRequestDispatcher(viewName);
-        requestDispatcher.forward(req, resp);
+        return null;
+    }
+
+    private void render(HttpServletRequest request, HttpServletResponse response, ModelAndView mav) throws Exception {
+        View view = mav.getView();
+        view.render(mav.getModel(), request, response);
     }
 }

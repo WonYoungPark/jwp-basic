@@ -1,10 +1,5 @@
 package core.jdbc;
 
-/**
- * Created by wyparks2@gmail.com on 2018. 5. 23.
- * Blog : http://WonYoungPark.github.io
- * Github : http://github.com/WonYoungPark
- */
 public class KeyHolder {
     private long id;
 

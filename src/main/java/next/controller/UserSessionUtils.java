@@ -1,14 +1,9 @@
 package next.controller;
 
-import next.model.User;
-
 import javax.servlet.http.HttpSession;
 
-/**
- * Created by wyparks2@gmail.com on 2018. 5. 2.
- * Blog : http://WonYoungPark.github.io
- * Github : http://github.com/WonYoungPark
- */
+import next.model.User;
+
 public class UserSessionUtils {
     public static final String USER_SESSION_KEY = "user";
 

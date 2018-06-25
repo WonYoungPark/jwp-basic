@@ -2,11 +2,6 @@ package next.model;
 
 import java.util.Date;
 
-/**
- * Created by wyparks2@gmail.com on 2018. 5. 23.
- * Blog : http://WonYoungPark.github.io
- * Github : http://github.com/WonYoungPark
- */
 public class Answer {
     private long answerId;
 
@@ -78,8 +73,11 @@ public class Answer {
 
     @Override
     public String toString() {
-        return "Answer [answerId=" + answerId + ", writer=" + writer
-            + ", contents=" + contents + ", createdDate=" + createdDate
-            + ", questionId=" + questionId + "]";
+        return "Answer [answerId=" + answerId + ", writer=" + writer + ", contents=" + contents + ", createdDate="
+                + createdDate + ", questionId=" + questionId + "]";
+    }
+
+    public boolean canDelete(User user) {
+        return user.isSameUser(this.writer);
     }
 }

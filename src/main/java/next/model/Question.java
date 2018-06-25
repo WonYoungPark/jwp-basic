@@ -1,12 +1,10 @@
 package next.model;
 
-import java.util.Date;
+import next.CannotDeleteException;
 
-/**
- * Created by wyparks2@gmail.com on 2018. 5. 23.
- * Blog : http://WonYoungPark.github.io
- * Github : http://github.com/WonYoungPark
- */
+import java.util.Date;
+import java.util.List;
+
 public class Question {
     private long questionId;
 
@@ -21,11 +19,15 @@ public class Question {
     private int countOfComment;
 
     public Question(String writer, String title, String contents) {
-        this(0, writer, title, contents, new Date(), 0);
+        this(1L, writer, title, contents, new Date(), 0);
     }
 
-    public Question(long questionId, String writer, String title, String contents,
-        Date createdDate, int countOfComment) {
+    public Question(long questionId, String writer, String title, String contents) {
+        this(questionId, writer, title, contents, new Date(), 0);
+    }
+
+    public Question(long questionId, String writer, String title, String contents, Date createdDate,
+            int countOfComment) {
         this.questionId = questionId;
         this.writer = writer;
         this.title = title;
@@ -62,12 +64,19 @@ public class Question {
         return countOfComment;
     }
 
+    public boolean isSameUser(User user) {
+        return user.isSameUser(this.writer);
+    }
+
+    public void update(Question newQuestion) {
+        this.title = newQuestion.title;
+        this.contents = newQuestion.contents;
+    }
+
     @Override
     public String toString() {
-        return "Question [questionId=" + questionId + ", writer=" + writer
-            + ", title=" + title + ", contents=" + contents
-            + ", createdDate=" + createdDate + ", countOfComment="
-            + countOfComment + "]";
+        return "Question [questionId=" + questionId + ", writer=" + writer + ", title=" + title + ", contents="
+                + contents + ", createdDate=" + createdDate + ", countOfComment=" + countOfComment + "]";
     }
 
     @Override
@@ -92,4 +101,17 @@ public class Question {
         return true;
     }
 
+    public boolean canDelete(User user, List<Answer> answers) throws CannotDeleteException {
+        if (!user.isSameUser(this.writer)) {
+            throw new CannotDeleteException("다른 사용자가 쓴 글을 삭제할 수 없습니다.");
+        }
+
+        for (Answer answer : answers) {
+            if (!answer.canDelete(user)) {
+                throw new CannotDeleteException("다른 사용자가 추가한 댓글이 존재해 삭제할 수 없습니다.");
+            }
+        }
+
+        return true;
+    }
 }
