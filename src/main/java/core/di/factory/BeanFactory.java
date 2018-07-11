@@ -2,6 +2,9 @@ package core.di.factory;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import core.annotation.Controller;
+import core.annotation.Repository;
+import core.annotation.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -72,5 +75,18 @@ public class BeanFactory {
                 args.add(bean);
         }
         return BeanUtils.instantiateClass(constructor, args.toArray());
+    }
+
+    public Map<Class<?>, Object> getControllers() {
+        Map<Class<?>, Object> controllers = Maps.newHashMap();
+
+        for (Class<?> clazz : preInstanticateBeans) {
+            Controller controller = clazz.getAnnotation(Controller.class);
+            if (controller != null) {
+                controllers.put(clazz, beans.get(clazz));
+            }
+        }
+
+        return controllers;
     }
 }

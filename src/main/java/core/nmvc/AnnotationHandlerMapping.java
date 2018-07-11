@@ -11,6 +11,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import core.annotation.RequestMapping;
 import core.annotation.RequestMethod;
+import core.di.factory.BeanFactory;
+import core.di.factory.BeanScanner;
 import org.reflections.ReflectionUtils;
 
 public class AnnotationHandlerMapping implements HandlerMapping {
@@ -23,8 +25,11 @@ public class AnnotationHandlerMapping implements HandlerMapping {
     }
 
     public void initialize() {
-        ControllerScanner scanner = new ControllerScanner(basePackage);
-        Map<Class<?>, Object> controllers = scanner.getControllers();
+        BeanScanner beanScanner = new BeanScanner(basePackage);
+        BeanFactory beanFactory = new BeanFactory(beanScanner.scan());
+        beanFactory.initialize();
+
+        Map<Class<?>, Object> controllers = beanFactory.getControllers();
 
         Set<Method> methods = this.getRequestMappingMethods(controllers.keySet());
 

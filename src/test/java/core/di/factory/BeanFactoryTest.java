@@ -9,8 +9,11 @@ import core.di.factory.example.QnaController;
 import org.junit.Before;
 import org.junit.Test;
 import org.reflections.Reflections;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.Annotation;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertNotNull;
@@ -19,15 +22,15 @@ import static org.junit.Assert.assertNotNull;
  * Created by One0 on 2018. 6. 27..
  */
 public class BeanFactoryTest {
-    private Reflections reflections;
+    private static final Logger logger = LoggerFactory.getLogger(BeanFactoryTest.class);
+
     private BeanFactory beanFactory;
 
     @Before
     @SuppressWarnings("unchecked")
     public void setup() {
-        reflections = new Reflections("core.di.factory.example");
-        Set<Class<?>> preInstanticateClazz = getTypesAnnotatedWith(Controller.class, Service.class, Repository.class);
-        beanFactory = new BeanFactory(preInstanticateClazz);
+        BeanScanner scanner = new BeanScanner("core.di.factory.example");
+        beanFactory = new BeanFactory(scanner.scan());
         beanFactory.initialize();
     }
 
@@ -43,12 +46,12 @@ public class BeanFactoryTest {
         assertNotNull(qnaService.getQuestionRepository());
     }
 
-    @SuppressWarnings("unchecked")
-    private Set<Class<?>> getTypesAnnotatedWith(Class<? extends Annotation>... annotations) {
-        Set<Class<?>> beans = Sets.newHashSet();
-        for (Class<? extends Annotation> annotation : annotations) {
-            beans.addAll(reflections.getTypesAnnotatedWith(annotation));
+    @Test
+    public void getControllers() throws Exception {
+        Map<Class<?>, Object> controllers = beanFactory.getControllers();
+
+        for (Class<?> controller : controllers.keySet()) {
+            logger.info("controller : {}", controller);
         }
-        return beans;
     }
 }
