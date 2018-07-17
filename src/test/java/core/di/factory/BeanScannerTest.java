@@ -1,9 +1,11 @@
 package core.di.factory;
 
+import core.di.factory.example.QnaController;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.Assert;
 
 import java.util.Set;
 
@@ -23,8 +25,9 @@ public class BeanScannerTest {
     @Test
     public void getControllers() throws Exception {
         Set<Class<?>> beans = scanner.scan();
-        for(Class clazz : beans){
-            logger.debug("bean {}", clazz.getName());
-        }
+        Assert.notNull(beans.contains(QnaController.class));
+//        for(Class clazz : beans){
+//            logger.debug("bean {}", clazz.getName());
+//        }
     }
 }

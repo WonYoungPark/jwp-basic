@@ -1,16 +1,14 @@
 package core.di.factory;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import core.annotation.Controller;
-import core.annotation.Repository;
-import core.annotation.Service;
+import core.di.factory.injector.ConstructorInjector;
+import core.di.factory.injector.FieldInjector;
+import core.di.factory.injector.Injector;
+import core.di.factory.injector.SetterInjector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,11 +20,17 @@ public class BeanFactory {
     private static final Logger logger = LoggerFactory.getLogger(BeanFactory.class);
 
     private Set<Class<?>> preInstanticateBeans;
-
     private Map<Class<?>, Object> beans = Maps.newHashMap();
+    private List<Injector> injectors;
 
     public BeanFactory(Set<Class<?>> preInstanticateBeans) {
         this.preInstanticateBeans = preInstanticateBeans;
+
+        injectors = Arrays.asList(
+            new FieldInjector(this),
+            new SetterInjector(this),
+            new ConstructorInjector(this)
+        );
     }
 
     @SuppressWarnings("unchecked")
@@ -36,57 +40,21 @@ public class BeanFactory {
 
     public void initialize() {
         for (Class<?> clazz : preInstanticateBeans) {
-            Object bean = instantiateClass(clazz);
-
-            if (bean != null && !beans.containsKey(clazz))
-                beans.put(clazz, bean);
-        }
-    }
-
-    /**
-     * @Inject 애노테이션이 설정되어 있는 생성자가 없으면 해당 메서드로 인스턴스 생성
-     * @param clazz
-     * @return
-     */
-    public Object instantiateClass(Class<?> clazz) {
-        Constructor<?> constructors = BeanFactoryUtils.getInjectedConstructor(clazz);
-
-        if (constructors != null) {
-            return instantiateConstructor(constructors);
-        }
-
-        return BeanUtils.instantiate(clazz);
-    }
-
-    /**
-     * @Inject 애노테이션이 설정되어 있는 생성자가 존재하면 해당 메서드로 인스턴스 생성
-     * @param constructor
-     * @return
-     */
-    public Object instantiateConstructor(Constructor<?> constructor) {
-        Class<?>[] parameterTypes = constructor.getParameterTypes();
-        List<Object> args = Lists.newArrayList();
-        for (Class<?> clazz : parameterTypes) {
-            clazz = BeanFactoryUtils.findConcreteClass(clazz, preInstanticateBeans);
-
-            Object bean = instantiateClass(clazz);
-
-            if (bean != null)
-                args.add(bean);
-        }
-        return BeanUtils.instantiateClass(constructor, args.toArray());
-    }
-
-    public Map<Class<?>, Object> getControllers() {
-        Map<Class<?>, Object> controllers = Maps.newHashMap();
-
-        for (Class<?> clazz : preInstanticateBeans) {
-            Controller controller = clazz.getAnnotation(Controller.class);
-            if (controller != null) {
-                controllers.put(clazz, beans.get(clazz));
+            if (beans.get(clazz) == null) {
+                logger.debug("instantiate Class {}", clazz);
+                inject(clazz);
             }
         }
+    }
 
-        return controllers;
+    private void inject(Class<?> clazz) {
+        for (Injector injector : injectors) {
+            injector.injector(clazz);
+        }
+    }
+
+    public void registerBean(Class<?> clazz, Object bean) {
+        if (!beans.containsKey(clazz))
+            beans.put(clazz, bean);
     }
 }
